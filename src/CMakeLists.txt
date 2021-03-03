@@ -23,6 +23,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 if (MSVC)
     target_compile_options(${LIB_NAME} PRIVATE /W4 /WX)
+	set_source_files_properties(thmxParser.cpp PROPERTIES COMPILE_FLAGS /wd4996) # Disable MSVC warning that sscanf may be unsafe
 endif()
 
 

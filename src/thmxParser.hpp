@@ -43,5 +43,64 @@ namespace thmxParser
 		std::map<OpticalTuple, float> reflectances;
 	};
 
-    void parseFile(std::string const & path);
+	struct BoundaryCondition
+	{
+		std::string name;
+		int type;
+		float H;		
+		float heatFlux;
+		float temperature;
+		ColorRGB color;
+		float Tr;
+		float Hr;
+		float Ei;
+		float viewFactor;
+		int radiationModel;
+		bool convectionFlag;
+		bool fluxFlag;
+		bool radiationFlag;
+		bool constantTemperatureFlag;
+		float emissivityModifier;
+
+	};
+
+	struct PolygonPoint
+	{
+		int index;
+		float x;
+		float y;
+	};
+
+	struct Polygon
+	{
+		int id;
+		std::string material;
+		std::vector<PolygonPoint> points;
+	};
+
+	struct BoundaryConditionPolygon
+	{
+		int id;
+		std::string name;
+		int polygonId;
+		int enclosureId;
+		std::string ufactorTag;
+		int ratationModel;
+		float emissivity;
+		std::string surfaceSide;
+		std::string illuminatedSurface;
+		std::vector<PolygonPoint> points;
+	};
+
+	struct ThmxFileContents
+	{
+		std::string fileVersion;
+		std::optional<MeshParameters> meshParameters;
+		std::vector<Material> materials;
+		std::vector<BoundaryCondition> boundaryConditions;
+		std::vector<Polygon> polygons;
+		std::vector<BoundaryConditionPolygon> boundaryConditionPolygons;
+	};
+
+	ThmxFileContents parseFile(std::string const & path);
 }   // namespace thmxParser

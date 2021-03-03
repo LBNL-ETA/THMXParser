@@ -48,10 +48,10 @@ namespace thmxParser
         float conductivity = std::stof(str);
 #if 0
 		if(Conductivity < 0)
-        {
-            Conductivity = 1;
-            ResultsOK = FALSE;
-        }
+		{
+			Conductivity = 1;
+			ResultsOK = FALSE;
+		}
 #endif
         // str = materialNode.getAttribute( "Absorptivity" );
         // float Absorptivity = std::stoi( str );
@@ -78,10 +78,6 @@ namespace thmxParser
             // back to 1 regardless to what is set in THMX file
             tir = 1.0;
         }
-
-        float frontAbsorptivity = 0;
-        float backAbsorptivity = 0;
-
 
         int iProp = 0;
         XMLParser::XMLNode materialPropertiesNode = materialNode.getChildNode("Property", &iProp);
@@ -208,7 +204,121 @@ namespace thmxParser
         return boundaryConditions;
     }
 
-    void parseFile(std::string const & path)
+    PolygonPoint parsePolygonPoint(XMLParser::XMLNode const & pointNode)
+    {
+        std::string indexStr = pointNode.getAttribute("index");
+        int index = std::stoi(indexStr);
+        std::string xstr = pointNode.getAttribute("x");
+        float x = std::stof(xstr);
+        std::string ystr = pointNode.getAttribute("y");
+        float y = std::stof(ystr);
+        return PolygonPoint{index, x, y};
+    }
+
+    Polygon parsePolygon(XMLParser::XMLNode const & polygonNode)
+    {
+        std::string id = polygonNode.getAttribute("ID");
+        int iPoly = std::stoi(id);
+        std::string material = polygonNode.getAttribute("Material");
+        // pPoly->SetName(material);
+        std::vector<PolygonPoint> points;
+        int i = 0;
+        while(1)
+        {
+            XMLParser::XMLNode pointNode = polygonNode.getChildNode("Point", &i);
+            if(pointNode.isEmpty())
+                break;
+            points.push_back(parsePolygonPoint(pointNode));
+        }
+        return Polygon{iPoly, material, points};
+    }
+
+    std::vector<Polygon> parsePolygons(XMLParser::XMLNode const & polygonsNode)
+    {
+        std::vector<Polygon> polygons;
+
+        if(!polygonsNode.isEmpty())
+        {
+            int ibc = 0;
+            while(true)
+            {
+                XMLParser::XMLNode polygonNode =
+                  polygonsNode.getChildNode("BoundaryCondition", &ibc);
+                if(polygonNode.isEmpty())
+                    break;
+                polygons.push_back(parsePolygon(polygonNode));
+            }
+        }
+
+        return polygons;
+    }
+
+    BoundaryConditionPolygon parseBoundaryConditionPolygon(XMLParser::XMLNode const & bcNode)
+    {
+        std::string id = bcNode.getAttribute("ID");
+        int iPoly = std::stoi(id);
+        std::string bcName = bcNode.getAttribute("BC");
+        std::string polygonId = bcNode.getAttribute("PolygonID");
+        int iPolygonId = std::stoi(polygonId);
+        std::string enclosureID = bcNode.getAttribute("EnclosureID");
+        int iEnclosureID;
+        iEnclosureID = std::stoi(enclosureID);
+        std::string ufactorTag = bcNode.getAttribute("UFactorTag");
+        std::string radiationModel = bcNode.getAttribute("RadiationModel");
+        int iRadiationModel = std::stoi(radiationModel);
+        std::string emissivity = bcNode.getAttribute("Emissivity");
+        float fEmissivity = -1.0;
+        if(!emissivity.empty())
+        {
+            fEmissivity = std::stof(emissivity);
+        }
+
+        std::string surfaceSide = bcNode.getAttribute("MaterialSide");
+        std::string illuminatedSurface = bcNode.getAttribute("IlluminatedSurface");
+
+        std::vector<PolygonPoint> points;
+        int i = 0;
+        while(1)
+        {
+            XMLParser::XMLNode pointNode = bcNode.getChildNode("Point", &i);
+            if(pointNode.isEmpty())
+                break;
+            points.push_back(parsePolygonPoint(pointNode));
+        }
+
+        return BoundaryConditionPolygon{iPoly,
+                                        bcName,
+                                        iPolygonId,
+                                        iEnclosureID,
+                                        ufactorTag,
+                                        iRadiationModel,
+                                        fEmissivity,
+                                        surfaceSide,
+                                        illuminatedSurface,
+                                        points};
+    }
+
+    std::vector<BoundaryConditionPolygon>
+      parseBoundaryConditionPolygons(XMLParser::XMLNode const & bcsNode)
+    {
+        std::vector<BoundaryConditionPolygon> boundaryConditionPolygons;
+
+        if(!bcsNode.isEmpty())
+        {
+            int iPolygon = 0;
+            while(true)
+            {
+                XMLParser::XMLNode bcNode = bcsNode.getChildNode("BCPolygon", &iPolygon);
+                if(bcNode.isEmpty())
+                    break;
+                boundaryConditionPolygons.push_back(parseBoundaryConditionPolygon(bcNode));
+            }
+        }
+
+        return boundaryConditionPolygons;
+    }
+
+    ThmxFileContents parseFile(std::string const & path)
     {
         XMLParser::XMLNode topNode = XMLParser::XMLNode::openFileHelper(path.c_str(), "THERM-XML");
 
@@ -220,6 +330,8 @@ namespace thmxParser
         {
             throw std::runtime_error("Missing file version");
         }
+
+        std::string fileVersion = versionNode.getText();
 #if 0
         if(!versionNode.isEmpty())
         {
@@ -236,190 +348,21 @@ namespace thmxParser
         XMLParser::XMLNode materialsNode = topNode.getChildNode("Materials");
         auto materials = parseMaterials(materialsNode);
 
-
         // boundary conditions
         XMLParser::XMLNode bcondsNode = topNode.getChildNode("BoundaryConditions");
-		auto boundaryConditions = parseBoundaryConditions(bCondsNode);
-#if 0
-        
-        XMLNode polygonsNode = topNode.getChildNode("Polygons");
-        if(!polygonsNode.isEmpty())
-            try
-            {
-                int iPolygon = 0;
-                while(1)
-                {
-                    XMLNode polygonNode = polygonsNode.getChildNode("Polygon", &iPolygon);
-                    if(polygonNode.isEmpty())
-                        break;
-                    std::string id = polygonNode.getAttribute("ID");
-                    int iPoly = std::stoi(id);
-                    CPolyShape * pPoly = FindPolyID(iPoly);
-                    std::string material = polygonNode.getAttribute("Material");
-                    BOOL newPoint = FALSE;
-                    if(pPoly == NULL && creatPoly)
-                    {
-                        pPoly = new CPolyMaterial(this, material);
-                        pPoly->SetID(iPoly);
-                        m_PolyShapeList.AddTail(pPoly);
-                        newPoint = TRUE;
-                        SetModifiedFlag(YES,
-                                        YES);   // Mark the document as having been modified, for
-                                                // purposes of confirming File Close.
-                    }
-                    if(pPoly != NULL)
-                    {
-                        pPoly->SetName(material);
-                        int i = 0;
-                        while(1)
-                        {
-                            XMLNode pointNode = polygonNode.getChildNode("Point", &i);
-                            if(pointNode.isEmpty())
-                                break;
-                            std::string indexStr = pointNode.getAttribute("index");
-                            int index = std::stoi(indexStr);
-                            std::string xstr = pointNode.getAttribute("x");
-                            float x = std::stof(xstr);
-                            std::string ystr = pointNode.getAttribute("y");
-                            float y = std::stof(ystr);
-                            // convert to internal coords and set!
-                            CRPoint pt;
-                            // CRPoint org = GetOrigin();
-                            pt.x = x;   //  + org.x;  (used to adjust for origin)
-                            pt.y = y;
-#    ifdef _DEBUG
-                            RPOINT old = pPoly->GetPoint(index);
-#    endif
-                            if(newPoint)
-                                pPoly->AddPoint(pt);
-                            else
-                                pPoly->SetPoint(pt, index);
-                        }
-                    }
-                }
-            }
-            catch(int iThrow)
-            {
-                return iThrow;
-            }
+        auto boundaryConditions = parseBoundaryConditions(bcondsNode);
 
-        XMLNode bcsNode = topNode.getChildNode("Boundaries");
-        if(!bcsNode.isEmpty())
-            try
-            {
-                int iPolygon = 0;
-                while(1)
-                {
-                    XMLNode bcNode = bcsNode.getChildNode("BCPolygon", &iPolygon);
-                    if(bcNode.isEmpty())
-                        break;
-                    std::string id = bcNode.getAttribute("ID");
-                    int iPoly = std::stoi(id);
-                    CPolyShape * pPoly = FindPolyID(iPoly);
-                    std::string bcName = bcNode.getAttribute("BC");
-                    std::string PolygonId = bcNode.getAttribute("PolygonID");
-                    int iPolygonId = std::stoi(PolygonId);
-                    std::string EnclosureID = bcNode.getAttribute("EnclosureID");
-                    int iEnclosureID;
-                    iEnclosureID = std::stoi(EnclosureID);
-                    std::string UFactorTag = bcNode.getAttribute("UFactorTag");
-                    std::string RadiationModel = bcNode.getAttribute("RadiationModel");
-                    int iRadiationModel = std::stoi(RadiationModel);
-                    std::string Emissivity = bcNode.getAttribute("Emissivity");
-                    float fEmissivity = -1.0;
-                    if(!Emissivity.IsEmpty())
-                        fEmissivity = std::stoi(Emissivity);
+        XMLParser::XMLNode polygonsNode = topNode.getChildNode("Polygons");
+        auto polygons = parsePolygons(polygonsNode);
 
-                    BOOL newPoint = FALSE;
-                    if(pPoly == NULL && creatPoly)
-                    {
-                        pPoly = new CPolyBC(this, MAKESTRING(IDS_ADIABATIC));
-                        pPoly->SetID(iPoly);
-                        pPoly->SetEnclosure(iEnclosureID);
-                        ((CPolyBC *)pPoly)->SetFluxTag(UFactorTag);
-                        newPoint = TRUE;
-                    }
-                    if(pPoly != NULL)
-                    {
-                        pPoly->SetName(bcName);
-                        if(fEmissivity > 0.0)
-                        {
-                            ((CPolyBC *)pPoly)->SetEmissivity(fEmissivity);
-                            ((CPolyBC *)pPoly)->SetUseGlobalEmissivity(FALSE);
-                        }
+        XMLParser::XMLNode bcsNode = topNode.getChildNode("Boundaries");
+        auto boundaryConditionPolygons = parseBoundaryConditionPolygons(bcsNode);
 
-                        std::string surfaceSide = bcNode.getAttribute("MaterialSide");
-                        if(!surfaceSide.IsEmpty())
-                        {
-                            if(surfaceSide.CompareNoCase("Front") == 0)
-                                ((CPolyBC *)pPoly)->setSurfaceSide(FenestrationCommon::Front);
-                            else
-                                ((CPolyBC *)pPoly)->setSurfaceSide(FenestrationCommon::Back);
-                        }
-
-                        std::string IlluminatedSurface = bcNode.getAttribute("IlluminatedSurface");
-                        if(!IlluminatedSurface.IsEmpty())
-                        {
-                            if(IlluminatedSurface.CompareNoCase("True") == 0)
-                            {
-                                ((CPolyBC *)pPoly)->setIlluminatedSurface(ILLUMINATION_SOURCE_YES);
-                            }
-                            else
-                            {
-                                ((CPolyBC *)pPoly)->setIlluminatedSurface(ILLUMINATION_SOURCE_NO);
-                            }
-                        }
-
-                        int i = 0;
-                        while(1)
-                        {
-                            XMLNode pointNode = bcNode.getChildNode("Point", &i);
-                            if(pointNode.isEmpty())
-                                break;
-                            std::string indexStr = pointNode.getAttribute("index");
-                            int index = std::stoi(indexStr);
-                            std::string xstr = pointNode.getAttribute("x");
-                            float x = std::stof(xstr);
-                            std::string ystr = pointNode.getAttribute("y");
-                            float y = std::stof(ystr);
-                            // convert to internal coords and set!
-                            CRPoint pt;
-                            pt.x = x;
-                            pt.y = y;
-                            if(newPoint)
-                                pPoly->AddPoint(pt);
-                            else
-                                pPoly->SetPoint(pt, index);
-                        }
-                    }
-                    if(newPoint)
-                    {
-                        CPolyShape * pAssociatedPoly = NULL;
-                        for(POSITION pos = GetFirstPolyShapePos(); pos != NULL;)
-                        {
-                            pAssociatedPoly = GetNextPolyShape(pos);
-                            if(pAssociatedPoly == NULL)
-                                continue;
-                            if(pAssociatedPoly->GetType() & POLYSHAPE_MATERIAL == 0)
-                                continue;
-                            if(pAssociatedPoly->GetID() == iPolygonId)
-                                break;
-                        }
-                        if(!pAssociatedPoly)
-                            return -1;
-                        ((CPolyBC *)pPoly)->SetPoly(pAssociatedPoly);
-                        pPoly->FinishPolyShape(NO);
-                        m_PolyShapeList.AddTail(pPoly);
-                        SetModifiedFlag(YES,
-                                        YES);   // Mark the document as having been modified, for
-                                                // purposes of confirming File Close.
-                    }
-                }
-            }
-            catch(int iThrow)
-            {
-                return iThrow;
-            }
-#endif
+        return ThmxFileContents{fileVersion,
+                                meshParams,
+                                materials,
+                                boundaryConditions,
+                                polygons,
+                                boundaryConditionPolygons};
     }
 }   // namespace thmxParser
