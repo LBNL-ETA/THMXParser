@@ -1,5 +1,6 @@
 #include "thmxParser.hpp"
 #include <xmlParser/xmlParser.h>
+#include <sstream>
 
 namespace thmxParser
 {
@@ -69,16 +70,19 @@ namespace thmxParser
         int red, green, blue;
         std::sscanf(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
         ColorRGB color{red, green, blue};
-        str = materialNode.getAttribute("CavityModel");
-        int cavityModel = 0;
-        if(!str.empty())
-        {
-            cavityModel = std::stoi(str);
-            // Tir for frame cavities is saved as -1. This should set Tir of any cavity
-            // back to 1 regardless to what is set in THMX file
-            tir = 1.0;
-        }
-
+		int cavityModel = 0;
+		if(materialNode.isAttributeSet("CavityModel"))
+		{
+			str = materialNode.getAttribute("CavityModel");
+			if(!str.empty())
+			{
+				cavityModel = std::stoi(str);
+				// Tir for frame cavities is saved as -1. This should set Tir of any cavity
+				// back to 1 regardless to what is set in THMX file
+				tir = 1.0;
+			}
+		}        
+        
         int iProp = 0;
         XMLParser::XMLNode materialPropertiesNode = materialNode.getChildNode("Property", &iProp);
 
@@ -318,6 +322,78 @@ namespace thmxParser
         return boundaryConditionPolygons;
     }
 
+    double getDoubleFromChildNode(XMLParser::XMLNode const & xmlNode, std::string const & nodeName)
+    {
+        XMLParser::XMLNode node = xmlNode.getChildNode(nodeName.c_str());
+        const std::basic_string<TCHAR> str = node.getText();
+        return std::stod(str.c_str());
+    }
+
+    CMABestWorstOption parseCMABestWorstOption(XMLParser::XMLNode const & bestWorstOptionNode)
+    {
+        XMLParser::XMLNode caseNode = bestWorstOptionNode.getChildNode("Case");
+        std::string option = caseNode.getText();
+
+        double insideConvectiveFilmCoefficient =
+          getDoubleFromChildNode(bestWorstOptionNode, "InsideEffectiveFilmCoefficient");
+        double outsideConvectiveFilmCoefficient =
+          getDoubleFromChildNode(bestWorstOptionNode, "OutsideEffectiveFilmCoefficient");
+        double glazingGapConductance =
+          getDoubleFromChildNode(bestWorstOptionNode, "GlazingGapConductance");
+        double spacerConductance = getDoubleFromChildNode(bestWorstOptionNode, "SpacerConductance");
+
+        return CMABestWorstOption{option,
+                                  insideConvectiveFilmCoefficient,
+                                  outsideConvectiveFilmCoefficient,
+                                  glazingGapConductance,
+                                  spacerConductance};
+    }
+
+    std::optional<CMAOptions> parseCMAOptions(XMLParser::XMLNode const & cmaNode)
+    {
+        if(cmaNode.isEmpty())
+        {
+            return std::optional<CMAOptions>();
+        }
+
+        double interiorLayerConductivity =
+          getDoubleFromChildNode(cmaNode, "InteriorLayerConductivity");
+        double interiorLayerThickness = getDoubleFromChildNode(cmaNode, "InteriorLayerThickness");
+        double interiorLayerEmissivity = getDoubleFromChildNode(cmaNode, "InteriorLayerEmissivity");
+        double exteriorLayerConductivity =
+          getDoubleFromChildNode(cmaNode, "ExteriorLayerConductivity");
+        double exteriorLayerThickness = getDoubleFromChildNode(cmaNode, "ExteriorLayerThickness");
+        double exteriorLayerEmissivity = getDoubleFromChildNode(cmaNode, "ExteriorLayerEmissivity");
+        double interiorTemperature = getDoubleFromChildNode(cmaNode, "InteriorTemperature");
+        double exteriorTemperature = getDoubleFromChildNode(cmaNode, "ExteriorTemperature");
+
+        std::map<std::string, CMABestWorstOption> bestWorstOptions;
+        int i{0};
+        XMLParser::XMLNode bestWorstOptionNode = cmaNode.getChildNode("BestWorstOptions", &i);
+        while(!bestWorstOptionNode.isEmpty())
+        {
+            auto bestWorstOption = parseCMABestWorstOption(bestWorstOptionNode);
+            if(bestWorstOptions.find(bestWorstOption.option) != bestWorstOptions.end())
+            {
+                std::stringstream msg;
+                msg << "Error parsing THMX file.  CMA option repeated: " << bestWorstOption.option;
+                throw std::runtime_error(msg.str());
+            }
+            bestWorstOptions[bestWorstOption.option] = bestWorstOption;
+            bestWorstOptionNode = cmaNode.getChildNode("BestWorstOptions", &i);
+        }
+
+        return CMAOptions{interiorLayerConductivity,
+                          interiorLayerThickness,
+                          interiorLayerEmissivity,
+                          exteriorLayerConductivity,
+                          exteriorLayerThickness,
+                          exteriorLayerEmissivity,
+                          interiorTemperature,
+                          exteriorTemperature,
+                          bestWorstOptions};
+    }
+
     ThmxFileContents parseFile(std::string const & path)
     {
         XMLParser::XMLNode topNode = XMLParser::XMLNode::openFileHelper(path.c_str(), "THERM-XML");
@@ -332,14 +408,6 @@ namespace thmxParser
         }
 
         std::string fileVersion = versionNode.getText();
-#if 0
-        if(!versionNode.isEmpty())
-        {
-            const auto fileVerionNumber = std::stoi(versionNode.getText());
-            fileVersionError =
-              fileVersionError || (fileVerionNumber != LBNLConstants::THMXFileVersion);
-        }
-#endif
 
         XMLParser::XMLNode meshNode = topNode.getChildNode("MeshControl");
         auto meshParams = parseMeshParameters(meshNode);
@@ -358,11 +426,15 @@ namespace thmxParser
         XMLParser::XMLNode bcsNode = topNode.getChildNode("Boundaries");
         auto boundaryConditionPolygons = parseBoundaryConditionPolygons(bcsNode);
 
+        XMLParser::XMLNode cmaNode = topNode.getChildNode("CMAGlazingSystemSettings");
+        auto cmaOptions = parseCMAOptions(cmaNode);
+
         return ThmxFileContents{fileVersion,
                                 meshParams,
                                 materials,
                                 boundaryConditions,
                                 polygons,
-                                boundaryConditionPolygons};
+                                boundaryConditionPolygons,
+                                cmaOptions};
     }
 }   // namespace thmxParser
