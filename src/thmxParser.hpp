@@ -113,6 +113,30 @@ namespace thmxParser
         std::map<std::string, CMABestWorstOption> bestWorstOptions;
     };
 
+	struct UFactorProjectionResult
+	{
+		std::string lengthType;
+		std::string lengthUnits;
+		float length;
+		std::string ufactorUnits;
+		float ufactor;
+	};
+
+	struct UFactorResults
+	{
+		std::string tag;
+		std::string deltaTUnits;
+		float deltaT;
+		std::vector<UFactorProjectionResult> projectionResults;
+	};
+
+	struct CMAResult
+	{
+		std::string glazingCase;
+		std::string spacerCase;
+		UFactorResults ufactorResults;
+	};
+
     struct ThmxFileContents
     {
         std::string fileVersion;
@@ -122,6 +146,7 @@ namespace thmxParser
         std::vector<Polygon> polygons;
         std::vector<BoundaryConditionPolygon> boundaryConditionPolygons;
         std::optional<CMAOptions> cmaOptions;
+		std::vector<CMAResult> cmaResults;
     };
 
     ThmxFileContents parseFile(std::string const & path);

@@ -4,6 +4,23 @@
 
 namespace thmxParser
 {
+    // The original THERM code used CString which is not cross-platform
+    // However XMLParser returns NULL if an attribute is missing.
+    // CString operator= with NULL generates an empty string
+    // However std::string gives a runtime error when trying to initialize with NULL
+    // Implementing the following to get same functionality, i.e. empty string
+    // when an attribute is missing, rather than make everything std::optional
+    std::string getAttribute(XMLParser::XMLNode const & node,
+                             std::string const & attribute,
+                             int * i = nullptr)
+    {
+        if(node.isAttributeSet(attribute.c_str()))
+        {
+            return node.getAttribute(attribute.c_str(), i);
+        }
+        return std::string();
+    }
+
     std::optional<MeshParameters> parseMeshParameters(XMLParser::XMLNode const & meshNode)
     {
         std::optional<MeshParameters> meshParams;
@@ -16,19 +33,19 @@ namespace thmxParser
             std::optional<bool> cmaFlag;
 
             std::string str;
-            str = meshNode.getAttribute("MeshLevel");
+            str = getAttribute(meshNode, "MeshLevel");
             if(!str.empty())
                 quadTreeMeshLevel = std::stoi(str);
-            str = meshNode.getAttribute("ErrorCheckFlag");
+            str = getAttribute(meshNode, "ErrorCheckFlag");
             if(!str.empty())
                 errorCheckFlag = static_cast<bool>(std::stoi(str));
-            str = meshNode.getAttribute("ErrorLimit");
+            str = getAttribute(meshNode, "ErrorLimit");
             if(!str.empty())
                 errorLimit = std::stof(str);
-            str = meshNode.getAttribute("MaxIterations");
+            str = getAttribute(meshNode, "MaxIterations");
             if(!str.empty())
                 maxIterations = std::stoi(str);
-            str = meshNode.getAttribute("CMAflag");
+            str = getAttribute(meshNode, "CMAflag");
             if(!str.empty())
                 cmaFlag = static_cast<bool>(std::stoi(str));
 
@@ -41,11 +58,11 @@ namespace thmxParser
 
     Material parseMaterial(XMLParser::XMLNode const & materialNode)
     {
-        std::string name = materialNode.getAttribute("Name");
+        std::string name = getAttribute(materialNode, "Name");
         // Name = GetDocName() + ":" + Name;
-        std::string str = materialNode.getAttribute("Type");
+        std::string str = getAttribute(materialNode, "Type");
         int type = std::stoi(str);
-        str = materialNode.getAttribute("Conductivity");
+        str = getAttribute(materialNode, "Conductivity");
         float conductivity = std::stof(str);
 #if 0
 		if(Conductivity < 0)
@@ -54,35 +71,32 @@ namespace thmxParser
 			ResultsOK = FALSE;
 		}
 #endif
-        // str = materialNode.getAttribute( "Absorptivity" );
+        // str = getAttribute(materialNode,  "Absorptivity" );
         // float Absorptivity = std::stoi( str );
-        str = materialNode.getAttribute("EmissivityFront");
+        str = getAttribute(materialNode, "EmissivityFront");
         const float emissivityFront = std::stof(str);
-        str = materialNode.getAttribute("EmissivityBack");
+        str = getAttribute(materialNode, "EmissivityBack");
         const float emissivityBack = std::stof(str);
-        str = materialNode.getAttribute("Tir");
+        str = getAttribute(materialNode, "Tir");
         float tir = std::stof(str);
-        // str = materialNode.getAttribute( "WindowDB" );
+        // str = getAttribute(materialNode,  "WindowDB" );
         // std::string windowDatabase = str;
-        // str = materialNode.getAttribute( "WindowID" );
+        // str = getAttribute(materialNode,  "WindowID" );
         // int shadeID = std::stoi( str );
-        str = materialNode.getAttribute("RGBColor");
+        str = getAttribute(materialNode, "RGBColor");
         int red, green, blue;
         std::sscanf(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
         ColorRGB color{red, green, blue};
-		int cavityModel = 0;
-		if(materialNode.isAttributeSet("CavityModel"))
-		{
-			str = materialNode.getAttribute("CavityModel");
-			if(!str.empty())
-			{
-				cavityModel = std::stoi(str);
-				// Tir for frame cavities is saved as -1. This should set Tir of any cavity
-				// back to 1 regardless to what is set in THMX file
-				tir = 1.0;
-			}
-		}        
-        
+        int cavityModel = 0;
+        str = getAttribute(materialNode, "CavityModel");
+        if(!str.empty())
+        {
+            cavityModel = std::stoi(str);
+            // Tir for frame cavities is saved as -1. This should set Tir of any cavity
+            // back to 1 regardless to what is set in THMX file
+            tir = 1.0;
+        }
+
         int iProp = 0;
         XMLParser::XMLNode materialPropertiesNode = materialNode.getChildNode("Property", &iProp);
 
@@ -91,9 +105,9 @@ namespace thmxParser
 
         while(!materialPropertiesNode.isEmpty())
         {
-            std::string side = materialPropertiesNode.getAttribute("Side");
-            std::string range = materialPropertiesNode.getAttribute("Range");
-            std::string specularity = materialPropertiesNode.getAttribute("Specularity");
+            std::string side = getAttribute(materialPropertiesNode, "Side");
+            std::string range = getAttribute(materialPropertiesNode, "Range");
+            std::string specularity = getAttribute(materialPropertiesNode, "Specularity");
             transmittances[OpticalTuple(side, range, specularity)] =
               std::stof(materialPropertiesNode.getAttribute("T"));
             reflectances[OpticalTuple(side, range, specularity)] =
@@ -135,40 +149,40 @@ namespace thmxParser
 
     BoundaryCondition parseBoundaryCondition(XMLParser::XMLNode const & bcondNode)
     {
-        std::string name = bcondNode.getAttribute("Name");
-        std::string str = bcondNode.getAttribute("Type");
+        std::string name = getAttribute(bcondNode, "Name");
+        std::string str = getAttribute(bcondNode, "Type");
         int type = std::stoi(str);
-        str = bcondNode.getAttribute("H");
+        str = getAttribute(bcondNode, "H");
         float H = std::stof(str);
-        str = bcondNode.getAttribute("HeatFLux");
+        str = getAttribute(bcondNode, "HeatFLux");
         float heatFlux = std::stof(str);
-        str = bcondNode.getAttribute("Temperature");
+        str = getAttribute(bcondNode, "Temperature");
         float temperature = std::stof(str);
-        str = bcondNode.getAttribute("RGBColor");
+        str = getAttribute(bcondNode, "RGBColor");
         int red, green, blue;
         std::sscanf(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
         ColorRGB color{red, green, blue};
 
-        str = bcondNode.getAttribute("Tr");
+        str = getAttribute(bcondNode, "Tr");
         float Tr = std::stof(str);
-        str = bcondNode.getAttribute("Hr");
+        str = getAttribute(bcondNode, "Hr");
         float Hr = std::stof(str);
-        str = bcondNode.getAttribute("Ei");
+        str = getAttribute(bcondNode, "Ei");
         float Ei = std::stof(str);
-        str = bcondNode.getAttribute("Viewfactor");
+        str = getAttribute(bcondNode, "Viewfactor");
         float viewFactor = std::stof(str);
-        str = bcondNode.getAttribute("RadiationModel");
+        str = getAttribute(bcondNode, "RadiationModel");
         int radiationModel = std::stoi(str);
 
-        str = bcondNode.getAttribute("ConvectionFlag");
+        str = getAttribute(bcondNode, "ConvectionFlag");
         bool convectionFlag = static_cast<bool>(std::stoi(str));
-        str = bcondNode.getAttribute("FluxFlag");
+        str = getAttribute(bcondNode, "FluxFlag");
         bool fluxFlag = static_cast<bool>(std::stoi(str));
-        str = bcondNode.getAttribute("RadiationFlag");
+        str = getAttribute(bcondNode, "RadiationFlag");
         bool radiationFlag = static_cast<bool>(std::stoi(str));
-        str = bcondNode.getAttribute("ConstantTemperatureFlag");
+        str = getAttribute(bcondNode, "ConstantTemperatureFlag");
         bool constantTemperatureFlag = static_cast<bool>(std::stoi(str));
-        str = bcondNode.getAttribute("EmisModifier");
+        str = getAttribute(bcondNode, "EmisModifier");
         float emisModifier = std::stof(str);
 
         return BoundaryCondition{name,
@@ -210,20 +224,20 @@ namespace thmxParser
 
     PolygonPoint parsePolygonPoint(XMLParser::XMLNode const & pointNode)
     {
-        std::string indexStr = pointNode.getAttribute("index");
+        std::string indexStr = getAttribute(pointNode, "index");
         int index = std::stoi(indexStr);
-        std::string xstr = pointNode.getAttribute("x");
+        std::string xstr = getAttribute(pointNode, "x");
         float x = std::stof(xstr);
-        std::string ystr = pointNode.getAttribute("y");
+        std::string ystr = getAttribute(pointNode, "y");
         float y = std::stof(ystr);
         return PolygonPoint{index, x, y};
     }
 
     Polygon parsePolygon(XMLParser::XMLNode const & polygonNode)
     {
-        std::string id = polygonNode.getAttribute("ID");
+        std::string id = getAttribute(polygonNode, "ID");
         int iPoly = std::stoi(id);
-        std::string material = polygonNode.getAttribute("Material");
+        std::string material = getAttribute(polygonNode, "Material");
         // pPoly->SetName(material);
         std::vector<PolygonPoint> points;
         int i = 0;
@@ -246,8 +260,7 @@ namespace thmxParser
             int ibc = 0;
             while(true)
             {
-                XMLParser::XMLNode polygonNode =
-                  polygonsNode.getChildNode("BoundaryCondition", &ibc);
+                XMLParser::XMLNode polygonNode = polygonsNode.getChildNode("Polygon", &ibc);
                 if(polygonNode.isEmpty())
                     break;
                 polygons.push_back(parsePolygon(polygonNode));
@@ -259,26 +272,30 @@ namespace thmxParser
 
     BoundaryConditionPolygon parseBoundaryConditionPolygon(XMLParser::XMLNode const & bcNode)
     {
-        std::string id = bcNode.getAttribute("ID");
+        std::string id = getAttribute(bcNode, "ID");
         int iPoly = std::stoi(id);
-        std::string bcName = bcNode.getAttribute("BC");
-        std::string polygonId = bcNode.getAttribute("PolygonID");
+        std::string bcName = getAttribute(bcNode, "BC");
+        std::string polygonId = getAttribute(bcNode, "PolygonID");
         int iPolygonId = std::stoi(polygonId);
-        std::string enclosureID = bcNode.getAttribute("EnclosureID");
+        std::string enclosureID = getAttribute(bcNode, "EnclosureID");
         int iEnclosureID;
         iEnclosureID = std::stoi(enclosureID);
-        std::string ufactorTag = bcNode.getAttribute("UFactorTag");
-        std::string radiationModel = bcNode.getAttribute("RadiationModel");
-        int iRadiationModel = std::stoi(radiationModel);
-        std::string emissivity = bcNode.getAttribute("Emissivity");
+        std::string ufactorTag = getAttribute(bcNode, "UFactorTag");
+        std::string radiationModel = getAttribute(bcNode, "RadiationModel");
+        int iRadiationModel = 0;
+        if(!radiationModel.empty())
+        {
+            iRadiationModel = std::stoi(radiationModel);
+        }
+        std::string emissivity = getAttribute(bcNode, "Emissivity");
         float fEmissivity = -1.0;
         if(!emissivity.empty())
         {
             fEmissivity = std::stof(emissivity);
         }
 
-        std::string surfaceSide = bcNode.getAttribute("MaterialSide");
-        std::string illuminatedSurface = bcNode.getAttribute("IlluminatedSurface");
+        std::string surfaceSide = getAttribute(bcNode, "MaterialSide");
+        std::string illuminatedSurface = getAttribute(bcNode, "IlluminatedSurface");
 
         std::vector<PolygonPoint> points;
         int i = 0;
@@ -394,6 +411,62 @@ namespace thmxParser
                           bestWorstOptions};
     }
 
+    UFactorProjectionResult parseUFactorProjection(XMLParser::XMLNode const & ufactorProjectionNode)
+    {
+        std::string lengthType = ufactorProjectionNode.getChildNode("Length-type").getText();
+        auto lengthNode = ufactorProjectionNode.getChildNode("Length");
+        auto ufactorNode = ufactorProjectionNode.getChildNode("U-factor");
+        std::string lengthUnit = getAttribute(lengthNode, "units");
+        float length = std::stof(getAttribute(lengthNode, "value"));
+        std::string ufactorUnit = getAttribute(ufactorNode, "units");
+        float ufactor = std::stof(getAttribute(ufactorNode, "value"));
+        return UFactorProjectionResult{lengthType, lengthUnit, length, ufactorUnit, ufactor};
+    }
+
+    UFactorResults parseUFactorResults(XMLParser::XMLNode const & ufactorResultsNode)
+    {
+        std::string tag = ufactorResultsNode.getChildNode("Tag").getText();
+        auto deltaTNode = ufactorResultsNode.getChildNode("DeltaT");
+        std::string deltaTUnits = getAttribute(deltaTNode, "units");
+        float deltaT = std::stof(getAttribute(deltaTNode, "value"));
+
+        std::vector<UFactorProjectionResult> projectionResults;
+        int i{0};
+        XMLParser::XMLNode projectionResultsNode =
+          ufactorResultsNode.getChildNode("Projection", &i);
+        while(!projectionResultsNode.isEmpty())
+        {
+            projectionResults.push_back(parseUFactorProjection(projectionResultsNode));
+            projectionResultsNode = ufactorResultsNode.getChildNode("BestWorstOptions", &i);
+        }
+
+        return UFactorResults{tag, deltaTUnits, deltaT, projectionResults};
+    }
+
+    CMAResult parseCMAResult(XMLParser::XMLNode const & resultNode)
+    {
+        std::string glazingCase = resultNode.getChildNode("GlazingCase").getText();
+        std::string spacerCase = resultNode.getChildNode("SpacerCase").getText();
+
+        XMLParser::XMLNode ufactorResultsNode = resultNode.getChildNode("U-factors");
+        auto ufactorResults = parseUFactorResults(ufactorResultsNode);
+
+        return CMAResult{glazingCase, spacerCase, ufactorResults};
+    }
+
+    std::vector<CMAResult> parseCMAResults(XMLParser::XMLNode const & resultsNode)
+    {
+        std::vector<CMAResult> results;
+        int i{0};
+        XMLParser::XMLNode resultNode = resultsNode.getChildNode("Case", &i);
+        while(!resultNode.isEmpty())
+        {
+            results.push_back(parseCMAResult(resultNode));
+            resultNode = resultsNode.getChildNode("Case", &i);
+        }
+        return results;
+    }
+
     ThmxFileContents parseFile(std::string const & path)
     {
         XMLParser::XMLNode topNode = XMLParser::XMLNode::openFileHelper(path.c_str(), "THERM-XML");
@@ -429,12 +502,16 @@ namespace thmxParser
         XMLParser::XMLNode cmaNode = topNode.getChildNode("CMAGlazingSystemSettings");
         auto cmaOptions = parseCMAOptions(cmaNode);
 
+        XMLParser::XMLNode resultsNode = topNode.getChildNode("Results");
+        auto cmaResults = parseCMAResults(resultsNode);
+
         return ThmxFileContents{fileVersion,
                                 meshParams,
                                 materials,
                                 boundaryConditions,
                                 polygons,
                                 boundaryConditionPolygons,
-                                cmaOptions};
+                                cmaOptions,
+                                cmaResults};
     }
 }   // namespace thmxParser
