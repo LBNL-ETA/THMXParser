@@ -445,13 +445,14 @@ namespace thmxParser
 
     CMAResult parseCMAResult(XMLParser::XMLNode const & resultNode)
     {
+		std::string modelType = resultNode.getChildNode("ModelType").getText();
         std::string glazingCase = resultNode.getChildNode("GlazingCase").getText();
         std::string spacerCase = resultNode.getChildNode("SpacerCase").getText();
 
         XMLParser::XMLNode ufactorResultsNode = resultNode.getChildNode("U-factors");
         auto ufactorResults = parseUFactorResults(ufactorResultsNode);
 
-        return CMAResult{glazingCase, spacerCase, ufactorResults};
+        return CMAResult{modelType, glazingCase, spacerCase, ufactorResults};
     }
 
     std::vector<CMAResult> parseCMAResults(XMLParser::XMLNode const & resultsNode)

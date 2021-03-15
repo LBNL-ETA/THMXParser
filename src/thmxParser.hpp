@@ -132,6 +132,7 @@ namespace thmxParser
 
 	struct CMAResult
 	{
+		std::string modelType;
 		std::string glazingCase;
 		std::string spacerCase;
 		UFactorResults ufactorResults;
