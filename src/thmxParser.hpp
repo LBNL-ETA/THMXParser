@@ -135,7 +135,7 @@ namespace thmxParser
 		std::string modelType;
 		std::string glazingCase;
 		std::string spacerCase;
-		UFactorResults ufactorResults;
+		std::vector<UFactorResults> ufactorResults;
 	};
 
     struct ThmxFileContents
