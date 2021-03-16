@@ -449,7 +449,7 @@ namespace thmxParser
         while(!projectionResultsNode.isEmpty())
         {
             projectionResults.push_back(parseUFactorProjection(projectionResultsNode));
-            projectionResultsNode = ufactorResultsNode.getChildNode("BestWorstOptions", &i);
+            projectionResultsNode = ufactorResultsNode.getChildNode("Projection", &i);
         }
 
         return UFactorResults{tag, deltaTUnits, deltaT, projectionResults};
