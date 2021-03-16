@@ -119,7 +119,7 @@ namespace thmxParser
 		std::string lengthUnits;
 		float length;
 		std::string ufactorUnits;
-		float ufactor;
+		std::string ufactor;
 	};
 
 	struct UFactorResults

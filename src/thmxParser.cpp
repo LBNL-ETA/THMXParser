@@ -431,7 +431,7 @@ namespace thmxParser
         std::string lengthUnit = getAttribute(lengthNode, "units");
         float length = std::stof(getAttribute(lengthNode, "value"));
         std::string ufactorUnit = getAttribute(ufactorNode, "units");
-        float ufactor = std::stof(getAttribute(ufactorNode, "value"));
+        std::string ufactor = getAttribute(ufactorNode, "value");
         return UFactorProjectionResult{lengthType, lengthUnit, length, ufactorUnit, ufactor};
     }
 
