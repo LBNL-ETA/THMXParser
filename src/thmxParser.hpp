@@ -130,7 +130,7 @@ namespace thmxParser
 		std::vector<UFactorProjectionResult> projectionResults;
 	};
 
-	struct CMAResult
+	struct Result
 	{
 		std::string modelType;
 		std::string glazingCase;
@@ -147,7 +147,7 @@ namespace thmxParser
         std::vector<Polygon> polygons;
         std::vector<BoundaryConditionPolygon> boundaryConditionPolygons;
         std::optional<CMAOptions> cmaOptions;
-		std::vector<CMAResult> cmaResults;
+		std::vector<Result> results;
     };
 
     ThmxFileContents parseFile(std::string const & path);

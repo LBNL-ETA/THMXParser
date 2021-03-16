@@ -21,6 +21,19 @@ namespace thmxParser
         return std::string();
     }
 
+	// See the comment for getAttribute
+	std::string getChildNodeText(XMLParser::XMLNode const & node,
+		std::string const & childNodeName)
+	{
+		std::string contents;
+		const char * txt = node.getChildNode(childNodeName.c_str()).getText();
+		if(txt != nullptr)
+		{
+			contents = txt;
+		}
+		return contents;
+	}
+
     std::optional<MeshParameters> parseMeshParameters(XMLParser::XMLNode const & meshNode)
     {
         std::optional<MeshParameters> meshParams;
@@ -342,14 +355,13 @@ namespace thmxParser
     double getDoubleFromChildNode(XMLParser::XMLNode const & xmlNode, std::string const & nodeName)
     {
         XMLParser::XMLNode node = xmlNode.getChildNode(nodeName.c_str());
-        const std::basic_string<TCHAR> str = node.getText();
+        const std::string str = node.getText();
         return std::stod(str.c_str());
     }
 
     CMABestWorstOption parseCMABestWorstOption(XMLParser::XMLNode const & bestWorstOptionNode)
     {
-        XMLParser::XMLNode caseNode = bestWorstOptionNode.getChildNode("Case");
-        std::string option = caseNode.getText();
+        std::string option = getChildNodeText(bestWorstOptionNode, "Case");
 
         double insideConvectiveFilmCoefficient =
           getDoubleFromChildNode(bestWorstOptionNode, "InsideEffectiveFilmCoefficient");
@@ -413,7 +425,7 @@ namespace thmxParser
 
     UFactorProjectionResult parseUFactorProjection(XMLParser::XMLNode const & ufactorProjectionNode)
     {
-        std::string lengthType = ufactorProjectionNode.getChildNode("Length-type").getText();
+        std::string lengthType = getChildNodeText(ufactorProjectionNode, "Length-type");
         auto lengthNode = ufactorProjectionNode.getChildNode("Length");
         auto ufactorNode = ufactorProjectionNode.getChildNode("U-factor");
         std::string lengthUnit = getAttribute(lengthNode, "units");
@@ -425,7 +437,7 @@ namespace thmxParser
 
     UFactorResults parseUFactorResults(XMLParser::XMLNode const & ufactorResultsNode)
     {
-        std::string tag = ufactorResultsNode.getChildNode("Tag").getText();
+        std::string tag = getChildNodeText(ufactorResultsNode, "Tag");
         auto deltaTNode = ufactorResultsNode.getChildNode("DeltaT");
         std::string deltaTUnits = getAttribute(deltaTNode, "units");
         float deltaT = std::stof(getAttribute(deltaTNode, "value"));
@@ -443,11 +455,11 @@ namespace thmxParser
         return UFactorResults{tag, deltaTUnits, deltaT, projectionResults};
     }
 
-    CMAResult parseCMAResult(XMLParser::XMLNode const & resultNode)
+    Result parseResult(XMLParser::XMLNode const & resultNode)
     {
-        std::string modelType = resultNode.getChildNode("ModelType").getText();
-        std::string glazingCase = resultNode.getChildNode("GlazingCase").getText();
-        std::string spacerCase = resultNode.getChildNode("SpacerCase").getText();
+        std::string modelType = getChildNodeText(resultNode, "ModelType");
+        std::string glazingCase = getChildNodeText(resultNode, "GlazingCase");
+        std::string spacerCase = getChildNodeText(resultNode, "SpacerCase");
 
         std::vector<UFactorResults> ufactorResults;
         int i{0};
@@ -458,17 +470,17 @@ namespace thmxParser
 			ufactorResultsNode = resultNode.getChildNode("U-factors", &i);
         }
 
-        return CMAResult{modelType, glazingCase, spacerCase, ufactorResults};
+        return Result{modelType, glazingCase, spacerCase, ufactorResults};
     }
 
-    std::vector<CMAResult> parseCMAResults(XMLParser::XMLNode const & resultsNode)
+    std::vector<Result> parseResults(XMLParser::XMLNode const & resultsNode)
     {
-        std::vector<CMAResult> results;
+        std::vector<Result> results;
         int i{0};
         XMLParser::XMLNode resultNode = resultsNode.getChildNode("Case", &i);
         while(!resultNode.isEmpty())
         {
-            results.push_back(parseCMAResult(resultNode));
+            results.push_back(parseResult(resultNode));
             resultNode = resultsNode.getChildNode("Case", &i);
         }
         return results;
@@ -510,7 +522,7 @@ namespace thmxParser
         auto cmaOptions = parseCMAOptions(cmaNode);
 
         XMLParser::XMLNode resultsNode = topNode.getChildNode("Results");
-        auto cmaResults = parseCMAResults(resultsNode);
+        auto cmaResults = parseResults(resultsNode);
 
         return ThmxFileContents{fileVersion,
                                 meshParams,
