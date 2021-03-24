@@ -486,10 +486,8 @@ namespace thmxParser
         return results;
     }
 
-    ThmxFileContents parseFile(std::string const & path)
+    ThmxFileContents parse(XMLParser::XMLNode const & topNode)
     {
-        XMLParser::XMLNode topNode = XMLParser::XMLNode::openFileHelper(path.c_str(), "THERM-XML");
-
         auto versionNode = topNode.getChildNode("FileVersion");
 
         bool fileVersionError = versionNode.isEmpty();
@@ -533,4 +531,17 @@ namespace thmxParser
                                 cmaOptions,
                                 cmaResults};
     }
+
+
+	ThmxFileContents parseFile(std::string const & path)
+	{
+		XMLParser::XMLNode topNode = XMLParser::XMLNode::openFileHelper(path.c_str(), "THERM-XML");
+		return parse(topNode);
+	}
+
+	ThmxFileContents parseString(std::string const & data)
+	{
+		XMLParser::XMLNode topNode = XMLParser::XMLNode::parseString(data.c_str(), "THERM-XML");
+		return parse(topNode);
+	}
 }   // namespace thmxParser

@@ -151,4 +151,5 @@ namespace thmxParser
     };
 
     ThmxFileContents parseFile(std::string const & path);
+	ThmxFileContents parseString(std::string const & data);
 }   // namespace thmxParser
