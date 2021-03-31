@@ -97,7 +97,7 @@ namespace thmxParser
         // str = getAttribute(materialNode,  "WindowID" );
         // int shadeID = std::stoi( str );
         str = getAttribute(materialNode, "RGBColor");
-        int red, green, blue;
+        unsigned int red, green, blue;
         std::sscanf(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
         ColorRGB color{red, green, blue};
         int cavityModel = 0;
@@ -172,7 +172,7 @@ namespace thmxParser
         str = getAttribute(bcondNode, "Temperature");
         float temperature = std::stof(str);
         str = getAttribute(bcondNode, "RGBColor");
-        int red, green, blue;
+        unsigned int red, green, blue;
         std::sscanf(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
         ColorRGB color{red, green, blue};
 
