@@ -21,6 +21,19 @@ namespace thmxParser
         return std::string();
     }
 
+	// See the comment for getAttribute
+	std::string getChildNodeText(XMLParser::XMLNode const & node,
+		std::string const & childNodeName)
+	{
+		std::string contents;
+		const char * txt = node.getChildNode(childNodeName.c_str()).getText();
+		if(txt != nullptr)
+		{
+			contents = txt;
+		}
+		return contents;
+	}
+
     std::optional<MeshParameters> parseMeshParameters(XMLParser::XMLNode const & meshNode)
     {
         std::optional<MeshParameters> meshParams;
@@ -84,7 +97,7 @@ namespace thmxParser
         // str = getAttribute(materialNode,  "WindowID" );
         // int shadeID = std::stoi( str );
         str = getAttribute(materialNode, "RGBColor");
-        int red, green, blue;
+        unsigned int red, green, blue;
         std::sscanf(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
         ColorRGB color{red, green, blue};
         int cavityModel = 0;
@@ -159,7 +172,7 @@ namespace thmxParser
         str = getAttribute(bcondNode, "Temperature");
         float temperature = std::stof(str);
         str = getAttribute(bcondNode, "RGBColor");
-        int red, green, blue;
+        unsigned int red, green, blue;
         std::sscanf(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
         ColorRGB color{red, green, blue};
 
@@ -342,14 +355,13 @@ namespace thmxParser
     double getDoubleFromChildNode(XMLParser::XMLNode const & xmlNode, std::string const & nodeName)
     {
         XMLParser::XMLNode node = xmlNode.getChildNode(nodeName.c_str());
-        const std::basic_string<TCHAR> str = node.getText();
+        const std::string str = node.getText();
         return std::stod(str.c_str());
     }
 
     CMABestWorstOption parseCMABestWorstOption(XMLParser::XMLNode const & bestWorstOptionNode)
     {
-        XMLParser::XMLNode caseNode = bestWorstOptionNode.getChildNode("Case");
-        std::string option = caseNode.getText();
+        std::string option = getChildNodeText(bestWorstOptionNode, "Case");
 
         double insideConvectiveFilmCoefficient =
           getDoubleFromChildNode(bestWorstOptionNode, "InsideEffectiveFilmCoefficient");
@@ -413,19 +425,19 @@ namespace thmxParser
 
     UFactorProjectionResult parseUFactorProjection(XMLParser::XMLNode const & ufactorProjectionNode)
     {
-        std::string lengthType = ufactorProjectionNode.getChildNode("Length-type").getText();
+        std::string lengthType = getChildNodeText(ufactorProjectionNode, "Length-type");
         auto lengthNode = ufactorProjectionNode.getChildNode("Length");
         auto ufactorNode = ufactorProjectionNode.getChildNode("U-factor");
         std::string lengthUnit = getAttribute(lengthNode, "units");
         float length = std::stof(getAttribute(lengthNode, "value"));
         std::string ufactorUnit = getAttribute(ufactorNode, "units");
-        float ufactor = std::stof(getAttribute(ufactorNode, "value"));
+        std::string ufactor = getAttribute(ufactorNode, "value");
         return UFactorProjectionResult{lengthType, lengthUnit, length, ufactorUnit, ufactor};
     }
 
     UFactorResults parseUFactorResults(XMLParser::XMLNode const & ufactorResultsNode)
     {
-        std::string tag = ufactorResultsNode.getChildNode("Tag").getText();
+        std::string tag = getChildNodeText(ufactorResultsNode, "Tag");
         auto deltaTNode = ufactorResultsNode.getChildNode("DeltaT");
         std::string deltaTUnits = getAttribute(deltaTNode, "units");
         float deltaT = std::stof(getAttribute(deltaTNode, "value"));
@@ -437,40 +449,45 @@ namespace thmxParser
         while(!projectionResultsNode.isEmpty())
         {
             projectionResults.push_back(parseUFactorProjection(projectionResultsNode));
-            projectionResultsNode = ufactorResultsNode.getChildNode("BestWorstOptions", &i);
+            projectionResultsNode = ufactorResultsNode.getChildNode("Projection", &i);
         }
 
         return UFactorResults{tag, deltaTUnits, deltaT, projectionResults};
     }
 
-    CMAResult parseCMAResult(XMLParser::XMLNode const & resultNode)
+    Result parseResult(XMLParser::XMLNode const & resultNode)
     {
-        std::string glazingCase = resultNode.getChildNode("GlazingCase").getText();
-        std::string spacerCase = resultNode.getChildNode("SpacerCase").getText();
+        std::string modelType = getChildNodeText(resultNode, "ModelType");
+        std::string glazingCase = getChildNodeText(resultNode, "GlazingCase");
+        std::string spacerCase = getChildNodeText(resultNode, "SpacerCase");
 
-        XMLParser::XMLNode ufactorResultsNode = resultNode.getChildNode("U-factors");
-        auto ufactorResults = parseUFactorResults(ufactorResultsNode);
+        std::vector<UFactorResults> ufactorResults;
+        int i{0};
+        XMLParser::XMLNode ufactorResultsNode = resultNode.getChildNode("U-factors", &i);
+        while(!ufactorResultsNode.isEmpty())
+        {
+			ufactorResults.push_back(parseUFactorResults(ufactorResultsNode));
+			ufactorResultsNode = resultNode.getChildNode("U-factors", &i);
+        }
 
-        return CMAResult{glazingCase, spacerCase, ufactorResults};
+        return Result{modelType, glazingCase, spacerCase, ufactorResults};
     }
 
-    std::vector<CMAResult> parseCMAResults(XMLParser::XMLNode const & resultsNode)
+    std::vector<Result> parseResults(XMLParser::XMLNode const & resultsNode)
     {
-        std::vector<CMAResult> results;
+        std::vector<Result> results;
         int i{0};
         XMLParser::XMLNode resultNode = resultsNode.getChildNode("Case", &i);
         while(!resultNode.isEmpty())
         {
-            results.push_back(parseCMAResult(resultNode));
+            results.push_back(parseResult(resultNode));
             resultNode = resultsNode.getChildNode("Case", &i);
         }
         return results;
     }
 
-    ThmxFileContents parseFile(std::string const & path)
+    ThmxFileContents parse(XMLParser::XMLNode const & topNode)
     {
-        XMLParser::XMLNode topNode = XMLParser::XMLNode::openFileHelper(path.c_str(), "THERM-XML");
-
         auto versionNode = topNode.getChildNode("FileVersion");
 
         bool fileVersionError = versionNode.isEmpty();
@@ -503,7 +520,7 @@ namespace thmxParser
         auto cmaOptions = parseCMAOptions(cmaNode);
 
         XMLParser::XMLNode resultsNode = topNode.getChildNode("Results");
-        auto cmaResults = parseCMAResults(resultsNode);
+        auto cmaResults = parseResults(resultsNode);
 
         return ThmxFileContents{fileVersion,
                                 meshParams,
@@ -514,4 +531,17 @@ namespace thmxParser
                                 cmaOptions,
                                 cmaResults};
     }
+
+
+	ThmxFileContents parseFile(std::string const & path)
+	{
+		XMLParser::XMLNode topNode = XMLParser::XMLNode::openFileHelper(path.c_str(), "THERM-XML");
+		return parse(topNode);
+	}
+
+	ThmxFileContents parseString(std::string const & data)
+	{
+		XMLParser::XMLNode topNode = XMLParser::XMLNode::parseString(data.c_str(), "THERM-XML");
+		return parse(topNode);
+	}
 }   // namespace thmxParser

@@ -19,9 +19,9 @@ namespace thmxParser
 
     struct ColorRGB
     {
-        int r;
-        int g;
-        int b;
+        unsigned int r;
+        unsigned int g;
+        unsigned int b;
     };
 
     using Side = std::string;
@@ -119,7 +119,7 @@ namespace thmxParser
 		std::string lengthUnits;
 		float length;
 		std::string ufactorUnits;
-		float ufactor;
+		std::string ufactor;
 	};
 
 	struct UFactorResults
@@ -130,11 +130,12 @@ namespace thmxParser
 		std::vector<UFactorProjectionResult> projectionResults;
 	};
 
-	struct CMAResult
+	struct Result
 	{
+		std::string modelType;
 		std::string glazingCase;
 		std::string spacerCase;
-		UFactorResults ufactorResults;
+		std::vector<UFactorResults> ufactorResults;
 	};
 
     struct ThmxFileContents
@@ -146,8 +147,9 @@ namespace thmxParser
         std::vector<Polygon> polygons;
         std::vector<BoundaryConditionPolygon> boundaryConditionPolygons;
         std::optional<CMAOptions> cmaOptions;
-		std::vector<CMAResult> cmaResults;
+		std::vector<Result> results;
     };
 
     ThmxFileContents parseFile(std::string const & path);
+	ThmxFileContents parseString(std::string const & data);
 }   // namespace thmxParser
