@@ -19,9 +19,9 @@ namespace thmxParser
 
     struct ColorRGB
     {
-        int r;
-        int g;
-        int b;
+        unsigned int r;
+        unsigned int g;
+        unsigned int b;
     };
 
     using Side = std::string;
