@@ -113,30 +113,38 @@ namespace thmxParser
         std::map<std::string, CMABestWorstOption> bestWorstOptions;
     };
 
-	struct UFactorProjectionResult
-	{
-		std::string lengthType;
-		std::string lengthUnits;
-		float length;
-		std::string ufactorUnits;
-		std::string ufactor;
-	};
+    struct UFactorProjectionResult
+    {
+        std::string lengthType;
+        std::string lengthUnits;
+        float length;
+        std::string ufactorUnits;
+        std::string ufactor;
+    };
 
-	struct UFactorResults
-	{
-		std::string tag;
-		std::string deltaTUnits;
-		float deltaT;
-		std::vector<UFactorProjectionResult> projectionResults;
-	};
+    struct UFactorResults
+    {
+        std::string tag;
+        std::string deltaTUnits;
+        float deltaT;
+        std::vector<UFactorProjectionResult> projectionResults;
+    };
 
-	struct Result
-	{
-		std::string modelType;
-		std::string glazingCase;
-		std::string spacerCase;
-		std::vector<UFactorResults> ufactorResults;
-	};
+    struct Result
+    {
+        std::string modelType;
+        std::string glazingCase;
+        std::string spacerCase;
+        std::vector<UFactorResults> ufactorResults;
+    };
+
+    struct GlazingSystem
+    {
+        int index;
+        int nLayers;
+        float width;
+        std::string units;
+    };
 
     struct ThmxFileContents
     {
@@ -144,12 +152,13 @@ namespace thmxParser
         std::optional<MeshParameters> meshParameters;
         std::vector<Material> materials;
         std::vector<BoundaryCondition> boundaryConditions;
+        std::vector<GlazingSystem> glazingSystems;
         std::vector<Polygon> polygons;
         std::vector<BoundaryConditionPolygon> boundaryConditionPolygons;
         std::optional<CMAOptions> cmaOptions;
-		std::vector<Result> results;
+        std::vector<Result> results;
     };
 
     ThmxFileContents parseFile(std::string const & path);
-	ThmxFileContents parseString(std::string const & data);
+    ThmxFileContents parseString(std::string const & data);
 }   // namespace thmxParser
