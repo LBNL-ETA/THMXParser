@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 
-project( THMXParser VERSION 1.0.0 LANGUAGES CXX )
+project( THMXParser VERSION 1.1.0 LANGUAGES CXX )
 set(LIB_NAME ${PROJECT_NAME})
 
 if(NOT "${CMAKE_CXX_STANDARD}")
