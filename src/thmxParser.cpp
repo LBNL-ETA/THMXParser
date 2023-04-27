@@ -21,18 +21,17 @@ namespace thmxParser
         return std::string();
     }
 
-	// See the comment for getAttribute
-	std::string getChildNodeText(XMLParser::XMLNode const & node,
-		std::string const & childNodeName)
-	{
-		std::string contents;
-		const char * txt = node.getChildNode(childNodeName.c_str()).getText();
-		if(txt != nullptr)
-		{
-			contents = txt;
-		}
-		return contents;
-	}
+    // See the comment for getAttribute
+    std::string getChildNodeText(XMLParser::XMLNode const & node, std::string const & childNodeName)
+    {
+        std::string contents;
+        const char * txt = node.getChildNode(childNodeName.c_str()).getText();
+        if(txt != nullptr)
+        {
+            contents = txt;
+        }
+        return contents;
+    }
 
     std::optional<MeshParameters> parseMeshParameters(XMLParser::XMLNode const & meshNode)
     {
@@ -244,6 +243,39 @@ namespace thmxParser
         std::string ystr = getAttribute(pointNode, "y");
         float y = std::stof(ystr);
         return PolygonPoint{index, x, y};
+    }
+
+    GlazingSystem parseGlazingSystem(XMLParser::XMLNode const & glazingSystemNode)
+    {
+        std::string indexStr = getAttribute(glazingSystemNode, "index");
+        int index = std::stoi(indexStr);
+        std::string nLayersStr = getAttribute(glazingSystemNode, "nLayers");
+        int nLayers = std::stoi(nLayersStr);
+        std::string widthStr = getAttribute(glazingSystemNode, "width");
+        float width = std::stof(widthStr);
+        std::string units = getAttribute(glazingSystemNode, "units");
+
+        return GlazingSystem{index, nLayers, width, units};
+    }
+
+    std::vector<GlazingSystem> parseGlazingSystems(XMLParser::XMLNode const & glazingSystemsNode)
+    {
+        std::vector<GlazingSystem> glazingSystem;
+
+        if(!glazingSystemsNode.isEmpty())
+        {
+            int ct = 0;
+            while(true)
+            {
+                XMLParser::XMLNode glazingSystemNode =
+                  glazingSystemsNode.getChildNode("GlazingSystem", &ct);
+                if(glazingSystemNode.isEmpty())
+                    break;
+                glazingSystem.push_back(parseGlazingSystem(glazingSystemNode));
+            }
+        }
+
+        return glazingSystem;
     }
 
     Polygon parsePolygon(XMLParser::XMLNode const & polygonNode)
@@ -466,8 +498,8 @@ namespace thmxParser
         XMLParser::XMLNode ufactorResultsNode = resultNode.getChildNode("U-factors", &i);
         while(!ufactorResultsNode.isEmpty())
         {
-			ufactorResults.push_back(parseUFactorResults(ufactorResultsNode));
-			ufactorResultsNode = resultNode.getChildNode("U-factors", &i);
+            ufactorResults.push_back(parseUFactorResults(ufactorResultsNode));
+            ufactorResultsNode = resultNode.getChildNode("U-factors", &i);
         }
 
         return Result{modelType, glazingCase, spacerCase, ufactorResults};
@@ -510,6 +542,9 @@ namespace thmxParser
         XMLParser::XMLNode bcondsNode = topNode.getChildNode("BoundaryConditions");
         auto boundaryConditions = parseBoundaryConditions(bcondsNode);
 
+        XMLParser::XMLNode glazingSystemsNode = topNode.getChildNode("GlazingSystems");
+        auto glazingSystems = parseGlazingSystems(glazingSystemsNode);
+
         XMLParser::XMLNode polygonsNode = topNode.getChildNode("Polygons");
         auto polygons = parsePolygons(polygonsNode);
 
@@ -526,6 +561,7 @@ namespace thmxParser
                                 meshParams,
                                 materials,
                                 boundaryConditions,
+                                glazingSystems,
                                 polygons,
                                 boundaryConditionPolygons,
                                 cmaOptions,
@@ -533,15 +569,15 @@ namespace thmxParser
     }
 
 
-	ThmxFileContents parseFile(std::string const & path)
-	{
-		XMLParser::XMLNode topNode = XMLParser::XMLNode::openFileHelper(path.c_str(), "THERM-XML");
-		return parse(topNode);
-	}
+    ThmxFileContents parseFile(std::string const & path)
+    {
+        XMLParser::XMLNode topNode = XMLParser::XMLNode::openFileHelper(path.c_str(), "THERM-XML");
+        return parse(topNode);
+    }
 
-	ThmxFileContents parseString(std::string const & data)
-	{
-		XMLParser::XMLNode topNode = XMLParser::XMLNode::parseString(data.c_str(), "THERM-XML");
-		return parse(topNode);
-	}
+    ThmxFileContents parseString(std::string const & data)
+    {
+        XMLParser::XMLNode topNode = XMLParser::XMLNode::parseString(data.c_str(), "THERM-XML");
+        return parse(topNode);
+    }
 }   // namespace thmxParser
