@@ -176,7 +176,11 @@ namespace thmxParser
         float temperature = std::stof(str);
         str = getAttribute(bcondNode, "RGBColor");
         unsigned int red, green, blue;
+#ifdef _MSC_VER
+        sscanf_s(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
+#else
         std::sscanf(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
+#endif
         ColorRGB color{red, green, blue};
 
         str = getAttribute(bcondNode, "Tr");
