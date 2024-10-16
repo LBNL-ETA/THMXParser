@@ -13,6 +13,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        # For more specific OS versions, you can specify them explicitly:
+        # os: [ubuntu-20.04, windows-2019, macos-11]
 
     steps:
       - name: Checkout code
@@ -26,48 +28,29 @@ jobs:
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install -y visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional"
           choco install -y ninja
-        shell: bash
+          choco install -y llvm  # Clang on Windows if needed
+          choco install -y visualstudio2019community
+        shell: pwsh
 
       - name: Install dependencies (Ubuntu)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build clang
-        shell: bash
-
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
           brew update
           brew install ninja
           brew install llvm
-        shell: bash
 
       - name: Configure CMake
         run: |
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-          else
-            cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=clang++
-          fi
-        shell: bash
-
+          cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=clang++
+          # Or specify other options as needed
       - name: Build
-        run: |
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            cmake --build build --config Debug
-          else
-            cmake --build build
-          fi
-        shell: bash
+        run: cmake --build build
 
       - name: Run tests
-        run: |
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            ctest --test-dir build --output-on-failure --config Debug
-          else
-            ctest --test-dir build --output-on-failure
-          fi
-        shell: bash
+        run: ctest --test-dir build --output-on-failure
