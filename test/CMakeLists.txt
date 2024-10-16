@@ -32,8 +32,8 @@ endif()
 add_executable(${PROJECT_TEST_NAME} 
 		read_cs_03.unit.cpp
 		read_cma_example.cpp
-		main.cpp 
-		paths.h )
+		main.cpp
+)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 

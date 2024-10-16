@@ -50,6 +50,10 @@ Option(BUILD_THMX_Parser_Tests "Build tests for thmx file parsing." ON)
 if(BUILD_THMX_Parser_Tests)
 	enable_testing()
 	add_subdirectory( test )
+
+	# Set the path to the test directory
+    set(TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/test")
+    target_compile_definitions(THMXParser-test PRIVATE TEST_DATA_DIR="${TEST_DATA_DIR}")
 endif()
 
 
