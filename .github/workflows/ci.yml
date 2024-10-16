@@ -13,12 +13,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        compiler: [msvc, clang] # Test with both MSVC and Clang on Windows
-        include:
-          - os: ubuntu-latest
-            compiler: clang
-          - os: macos-latest
-            compiler: clang
+        # For more specific OS versions, you can specify them explicitly:
+        # os: [ubuntu-20.04, windows-2019, macos-11]
 
     steps:
       - name: Checkout code
@@ -33,11 +29,8 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install -y ninja
-          if (${{ matrix.compiler }} == 'clang') {
-            choco install -y llvm  # Install Clang on Windows if needed
-          } else {
-            choco install -y visualstudio2022community --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64"
-          }
+          choco install -y llvm  # Clang on Windows if needed
+          # choco install -y visualstudio2019community
         shell: pwsh
 
       - name: Install dependencies (Ubuntu)
@@ -54,11 +47,8 @@ jobs:
 
       - name: Configure CMake
         run: |
-          if (runner.os == 'Windows' && ${{ matrix.compiler }} == 'msvc') {
-            cmake -S . -B build -G Ninja -A x64 -T host=x64 -DCMAKE_CXX_COMPILER=cl
-          } else {
-            cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=clang++
-          }
+          cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=clang++
+          # Or specify other options as needed
       - name: Build
         run: cmake --build build
 

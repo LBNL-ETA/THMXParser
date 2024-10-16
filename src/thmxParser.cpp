@@ -97,7 +97,11 @@ namespace thmxParser
         // int shadeID = std::stoi( str );
         str = getAttribute(materialNode, "RGBColor");
         unsigned int red, green, blue;
+#ifdef _MSC_VER
+        sscanf_s(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
+#else
         std::sscanf(str.c_str(), "0x%02x%02x%02x", &red, &green, &blue);
+#endif
         ColorRGB color{red, green, blue};
         int cavityModel = 0;
         str = getAttribute(materialNode, "CavityModel");
