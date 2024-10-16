@@ -28,13 +28,14 @@ jobs:
         run: |
           choco install -y visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional"
           choco install -y ninja
-        shell: pwsh
+        shell: bash
 
       - name: Install dependencies (Ubuntu)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build clang
+        shell: bash
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
@@ -42,6 +43,7 @@ jobs:
           brew update
           brew install ninja
           brew install llvm
+        shell: bash
 
       - name: Configure CMake
         run: |
@@ -50,6 +52,7 @@ jobs:
           else
             cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=clang++
           fi
+        shell: bash
 
       - name: Build
         run: |
@@ -58,6 +61,7 @@ jobs:
           else
             cmake --build build
           fi
+        shell: bash
 
       - name: Run tests
         run: |
@@ -66,3 +70,4 @@ jobs:
           else
             ctest --test-dir build --output-on-failure
           fi
+        shell: bash
