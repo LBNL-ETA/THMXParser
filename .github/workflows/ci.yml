@@ -13,8 +13,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        # For more specific OS versions, you can specify them explicitly:
-        # os: [ubuntu-20.04, windows-2019, macos-11]
 
     steps:
       - name: Checkout code
@@ -28,8 +26,8 @@ jobs:
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
+          choco install -y visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --includeOptional"
           choco install -y ninja
-          choco install -y visualstudio2022community --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.CMake.Project"
         shell: pwsh
 
       - name: Install dependencies (Ubuntu)
