@@ -29,8 +29,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install -y ninja
-          choco install -y llvm  # Clang on Windows if needed
-          choco install -y visualstudio2019community
+          choco install -y visualstudio2022community --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.CMake.Project"
         shell: pwsh
 
       - name: Install dependencies (Ubuntu)
@@ -38,6 +37,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ninja-build clang
+
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -47,10 +47,24 @@ jobs:
 
       - name: Configure CMake
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=clang++
-          # Or specify other options as needed
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+          else
+            cmake -S . -B build -G Ninja -DCMAKE_CXX_COMPILER=clang++
+          fi
+
       - name: Build
-        run: cmake --build build
+        run: |
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            cmake --build build --config Debug
+          else
+            cmake --build build
+          fi
 
       - name: Run tests
-        run: ctest --test-dir build --output-on-failure
+        run: |
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            ctest --test-dir build --output-on-failure --config Debug
+          else
+            ctest --test-dir build --output-on-failure
+          fi
