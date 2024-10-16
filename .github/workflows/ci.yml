@@ -30,7 +30,7 @@ jobs:
         run: |
           choco install -y ninja
           choco install -y llvm  # Clang on Windows if needed
-          # choco install -y visualstudio2019community
+          choco install -y visualstudio2019community
         shell: pwsh
 
       - name: Install dependencies (Ubuntu)
