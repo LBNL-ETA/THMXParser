@@ -43,6 +43,13 @@ if(NOT TARGET xmlParser)
     )
 
     FetchContent_MakeAvailable(xmlParser)
+
+    # xmlParser is an old component and uses deprecated functions. This is to disable compiler warnings
+    if (MSVC)
+        target_compile_definitions(xmlParser PRIVATE _CRT_SECURE_NO_WARNINGS)
+    else()
+        target_compile_options(xmlParser PRIVATE -Wno-deprecated-declarations)
+    endif()
 endif()
 
 add_subdirectory( src )
