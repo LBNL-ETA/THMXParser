@@ -1,28 +1,18 @@
 #include <memory>
 #include <gtest/gtest.h>
-#include <memory>
-#include <sstream>
 #include <filesystem>
 
 #include "thmxParser.hpp"
 
-#include "paths.h"
 
-extern std::string test_dir;
-
-class TestLoadCS03 : public testing::Test
+TEST(TestLoadCS03, TestLoadCS03FromDisk)
 {
-protected:
-    virtual void SetUp()
-    {}
-};
-
-
-TEST_F(TestLoadCS03, TestLoadCS03FromDisk)
-{
-    std::filesystem::path product_path(test_dir);
+    std::filesystem::path product_path(TEST_DATA_DIR);
     product_path /= "files";
     product_path /= "CS03.thmx";
-    //thmxParser::parseFile(product_path.string());
-    
+    auto contents = thmxParser::parseFile(product_path.string());
+    EXPECT_EQ(contents.fileVersion, "1");
+    EXPECT_EQ(contents.boundaryConditions.size(), 4u);
+    EXPECT_EQ(contents.materials.size(), 13u);
+    EXPECT_EQ(contents.polygons.size(), 99u);
 }

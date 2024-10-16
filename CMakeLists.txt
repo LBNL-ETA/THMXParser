@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.11)
 
 project( THMXParser VERSION 1.1.0 LANGUAGES CXX )
 set(LIB_NAME ${PROJECT_NAME})
@@ -33,7 +33,17 @@ else()
     set(DOWNLOAD_GTEST OFF)
 endif()
 
-include(CMakeLists-xmlParser.txt)
+include(FetchContent)
+
+if(NOT TARGET xmlParser)
+    FetchContent_Declare(
+        xmlParser
+        GIT_REPOSITORY https://github.com/LBNL-ETA/XMLParser.git
+        GIT_TAG "v1.0.1"
+    )
+
+    FetchContent_MakeAvailable(xmlParser)
+endif()
 
 add_subdirectory( src )
 
@@ -50,6 +60,10 @@ Option(BUILD_THMX_Parser_Tests "Build tests for thmx file parsing." ON)
 if(BUILD_THMX_Parser_Tests)
 	enable_testing()
 	add_subdirectory( test )
+
+	# Set the path to the test directory
+    set(TEST_DATA_DIR "${CMAKE_CURRENT_SOURCE_DIR}/test")
+    target_compile_definitions(THMXParser-test PRIVATE TEST_DATA_DIR="${TEST_DATA_DIR}")
 endif()
 
 
