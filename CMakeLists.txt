@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.11)
 
-project( THMXParser VERSION 1.1.0 LANGUAGES CXX )
+project( THMXParser VERSION 1.1.3 LANGUAGES CXX )
 set(LIB_NAME ${PROJECT_NAME})
 
 if(NOT "${CMAKE_CXX_STANDARD}")
-	set(CMAKE_CXX_STANDARD 14)
+	set(CMAKE_CXX_STANDARD 20)
 endif()
 
 if(NOT "${CMAKE_CXX_EXTENSIONS}")
@@ -39,7 +39,7 @@ if(NOT TARGET xmlParser)
     FetchContent_Declare(
         xmlParser
         GIT_REPOSITORY https://github.com/LBNL-ETA/XMLParser.git
-        GIT_TAG "v1.0.2"
+        GIT_TAG "CPP20Conversion"
     )
 
     FetchContent_MakeAvailable(xmlParser)
