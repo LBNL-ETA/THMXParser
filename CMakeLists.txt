@@ -39,7 +39,7 @@ if(NOT TARGET xmlParser)
     FetchContent_Declare(
         xmlParser
         GIT_REPOSITORY https://github.com/LBNL-ETA/XMLParser.git
-        GIT_TAG "CPP20Conversion"
+        GIT_TAG "v1.0.3"
     )
 
     FetchContent_MakeAvailable(xmlParser)
