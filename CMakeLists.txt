@@ -39,7 +39,7 @@ if(NOT TARGET xmlParser)
     FetchContent_Declare(
         xmlParser
         GIT_REPOSITORY https://github.com/LBNL-ETA/XMLParser.git
-        GIT_TAG "v1.0.3"
+        GIT_TAG "feature/disable-wide-char"
     )
 
     FetchContent_MakeAvailable(xmlParser)
