@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.15)
 
 project( THMXParser VERSION 1.1.3 LANGUAGES CXX )
 set(LIB_NAME ${PROJECT_NAME})
