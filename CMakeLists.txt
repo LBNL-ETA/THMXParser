@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project( THMXParser VERSION 1.1.3 LANGUAGES CXX )
+project( THMXParser VERSION 1.1.4 LANGUAGES CXX )
 set(LIB_NAME ${PROJECT_NAME})
 
 if(NOT "${CMAKE_CXX_STANDARD}")
@@ -39,7 +39,7 @@ if(NOT TARGET xmlParser)
     FetchContent_Declare(
         xmlParser
         GIT_REPOSITORY https://github.com/LBNL-ETA/XMLParser.git
-        GIT_TAG "feature/disable-wide-char"
+        GIT_TAG "v1.0.4"
     )
 
     FetchContent_MakeAvailable(xmlParser)
