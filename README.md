@@ -17,7 +17,7 @@ include(FetchContent)
 FetchContent_Declare(
     THMXParser
     GIT_REPOSITORY https://github.com/LBNL-ETA/THMXParser.git
-    GIT_TAG v1.1.5
+    GIT_TAG v1.1.6
 )
 FetchContent_MakeAvailable(THMXParser)
 
@@ -52,10 +52,9 @@ ctest --test-dir build/default-release -C Release --output-on-failure
 | Dependency | Expected sibling path |
 |------------|----------------------|
 | XMLParser | `../XMLParser` |
+| GoogleTest | `../googletest` |
 
-Missing siblings fall back to the declared remote automatically, so `local-*` is safe to invoke even if you don't have the sibling checked out.
-
-> **Note:** The test target's GoogleTest dependency is fetched via a legacy pre-FetchContent download mechanism in `test/CMakeLists.txt`, not by `FetchContent_Declare`. It is not currently overridable via `FETCHCONTENT_SOURCE_DIR_GOOGLETEST`.
+Missing siblings fall back to the declared remote automatically, so `local-*` is safe to invoke even if you don't have the siblings checked out.
 
 #### Per-machine compiler presets (`CMakeUserPresets.json`)
 

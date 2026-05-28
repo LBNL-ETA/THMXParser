@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
 
-project( THMXParser VERSION 1.1.5 LANGUAGES CXX )
+project( THMXParser VERSION 1.1.6 LANGUAGES CXX )
 set(LIB_NAME ${PROJECT_NAME})
 
 # Graceful local-sibling fallback: the `local` CMake preset sets
 # FETCHCONTENT_SOURCE_DIR_<NAME> to ${sourceDir}/../<DepName> for each declared
 # dependency. If a sibling working copy is missing, unset that variable here so
 # FetchContent falls back to the declared remote instead of erroring out.
-foreach(_lbnl_dep XMLPARSER)
+foreach(_lbnl_dep XMLPARSER GOOGLETEST)
     if(DEFINED FETCHCONTENT_SOURCE_DIR_${_lbnl_dep})
         if(NOT EXISTS "${FETCHCONTENT_SOURCE_DIR_${_lbnl_dep}}/CMakeLists.txt")
             message(STATUS

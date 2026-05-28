@@ -28,10 +28,11 @@
         {
             "name": "local",
             "hidden": true,
-            "description": "Base: prefers sibling working copies of dependencies (../XMLParser); falls back to remote per-dep when missing. Inherited by local-debug, local-release, and personal compiler presets.",
+            "description": "Base: prefers sibling working copies of dependencies (../XMLParser, ../googletest); falls back to remote per-dep when missing. Inherited by local-debug, local-release, and personal compiler presets.",
             "inherits": "default",
             "cacheVariables": {
-                "FETCHCONTENT_SOURCE_DIR_XMLPARSER": "${sourceDir}/../XMLParser"
+                "FETCHCONTENT_SOURCE_DIR_XMLPARSER": "${sourceDir}/../XMLParser",
+                "FETCHCONTENT_SOURCE_DIR_GOOGLETEST": "${sourceDir}/../googletest"
             }
         },
         {
