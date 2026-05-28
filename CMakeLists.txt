@@ -1,7 +1,22 @@
 cmake_minimum_required(VERSION 3.15)
 
-project( THMXParser VERSION 1.1.4 LANGUAGES CXX )
+project( THMXParser VERSION 1.1.5 LANGUAGES CXX )
 set(LIB_NAME ${PROJECT_NAME})
+
+# Graceful local-sibling fallback: the `local` CMake preset sets
+# FETCHCONTENT_SOURCE_DIR_<NAME> to ${sourceDir}/../<DepName> for each declared
+# dependency. If a sibling working copy is missing, unset that variable here so
+# FetchContent falls back to the declared remote instead of erroring out.
+foreach(_lbnl_dep XMLPARSER)
+    if(DEFINED FETCHCONTENT_SOURCE_DIR_${_lbnl_dep})
+        if(NOT EXISTS "${FETCHCONTENT_SOURCE_DIR_${_lbnl_dep}}/CMakeLists.txt")
+            message(STATUS
+                "Local sibling for ${_lbnl_dep} not found at "
+                "${FETCHCONTENT_SOURCE_DIR_${_lbnl_dep}}; falling back to remote.")
+            unset(FETCHCONTENT_SOURCE_DIR_${_lbnl_dep} CACHE)
+        endif()
+    endif()
+endforeach()
 
 if(NOT "${CMAKE_CXX_STANDARD}")
 	set(CMAKE_CXX_STANDARD 20)
@@ -35,11 +50,13 @@ endif()
 
 include(FetchContent)
 
+set(xmlParser_Branch "v1.0.5")
+
 if(NOT TARGET xmlParser)
     FetchContent_Declare(
         xmlParser
         GIT_REPOSITORY https://github.com/LBNL-ETA/XMLParser.git
-        GIT_TAG "v1.0.4"
+        GIT_TAG ${xmlParser_Branch}
     )
 
     FetchContent_MakeAvailable(xmlParser)
