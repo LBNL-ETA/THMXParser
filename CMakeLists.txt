@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project( THMXParser VERSION 1.1.6 LANGUAGES CXX )
+project( THMXParser VERSION 1.1.7 LANGUAGES CXX )
 set(LIB_NAME ${PROJECT_NAME})
 
 # Local development mode. The `local` preset sets LBNL_LOCAL_SIBLINGS=ON (a cache
