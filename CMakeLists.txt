@@ -78,6 +78,8 @@ if(NOT TARGET xmlParser)
     FetchContent_MakeAvailable(xmlParser)
 endif()
 
+configure_file(doc/THMXParser.md.in ${CMAKE_CURRENT_SOURCE_DIR}/doc/THMXParser.md @ONLY)
+
 add_subdirectory( src )
 
 target_include_directories(${LIB_NAME}

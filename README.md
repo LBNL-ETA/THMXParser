@@ -26,6 +26,10 @@ target_link_libraries(MyTarget PRIVATE THMXParser)
 
 Update `GIT_TAG` to the desired release tag.
 
+## Dependencies
+
+[Dependency Chart](doc/DependencyChart.md)
+
 ## Building (developers)
 
 `XMLParser` is downloaded automatically via CMake FetchContent on first configure. Tests build by default when THMXParser is the top-level project (`-DBUILD_THMX_Parser_Tests=OFF` to disable).

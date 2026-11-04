@@ -1,0 +1,9 @@
+```mermaid
+graph TD
+    %% Package definitions
+    xmlParser[xmlParser<br/><font color='red'>@xmlParser_Branch@</font>]
+    THMXParser[THMXParser<br/><font color='red'>v@PROJECT_VERSION@</font>]
+
+    %% Package relations
+    THMXParser --> xmlParser
+```
